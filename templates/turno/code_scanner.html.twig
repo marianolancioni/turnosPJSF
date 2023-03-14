@@ -1,0 +1,36 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Escáner de Turno{% endblock %}
+
+{% block body %}
+    <div class="container">
+        <div class="card shadow">
+            <div class="card-header">
+                Escáner de Turno
+            </div>
+            <div class="card-body">     
+                {{ form_start(form) }}
+                <div class="my-custom-class-for-errors">
+                    {{ form_errors(form) }}
+                </div>
+    
+                <fieldset class="border p-2">
+                    <div class="row">
+                        <div class="col-12">
+                            {{ form_row(form.codigo) }}
+                            {% if error %}
+                                <p class="text-center text-danger">{{ error }}</p>
+                            {% endif %}
+                        </div>
+                    </div>
+                </fieldset>
+
+                <div class="row mt-4">
+                    <div class="col-6 float-left"><a  class="btn btn-secondary shadow volver" href="{{ path('turno_index') }}" onclick="self.close()">Volver a la  lista de Turnos</a></div>
+                    <div class="col-6 float-right">{{ form_end(form) }}</div>
+                </div>
+            </div>
+        </div>  
+    </div>
+
+{% endblock %}

@@ -1,0 +1,165 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Lista de Turnos{% endblock %}
+
+{% block body %}
+    {# Los siguients 2 div's se utilizan para trasladar a JavaScrip si el usuario tienen rol de Admin o de Auditoria_Gestion 
+       Ref.: https://symfony.com/doc/current/frontend/encore/server-data.html
+    #}
+    <div class="js-role-admin" data-is-authenticated="{{ is_granted('ROLE_ADMIN') ? true : false }}"></div>
+    <div class="js-role-auditoria_gestion" data-is-authenticated="{{ is_granted('ROLE_AUDITORIA_GESTION') ? true : false }}"></div>
+
+    <div class="row">
+        <div class="col col-3"></div>
+        <div class="col col-6 text-center">
+            <h1>Lista de Turnos</h1>    
+        </div>
+        <div class="col col-3 text-right">
+            <div class="row">
+                <div id="porcentajeAgendaAsignada" class="col-sm-6 blockquote-footer">Agenda Asignada:
+                    <div id="spinner" class="spinner-grow spinner-grow-sm" role="status">
+                        <span class="sr-only">Calculando...</span>
+                    </div>
+                </div>
+                <div class="col-sm-6">
+                    <a href="{{path('turno_barcode')}}" title="Escanear Código del Turno" class="d-print-none"><i class="fas fa-barcode fa-lg shadow"></i></a>
+                    &nbsp;&nbsp;&nbsp;&nbsp;
+                    <a href="{{path('turno_index')}}" title="Actualizar Lista" class="d-print-none"><i class="fas fa-sync-alt shadow"></i></a>
+                    &nbsp;&nbsp;&nbsp;&nbsp;
+                    <a onclick="imprimirLista()" title="Imprimir Lista" class="d-print-none"><i class="fas fa-print fa-lg shadow"></i></a>
+                </div>
+            </div>
+        </div>
+    </div>
+    <br>
+    <span class="iconify" data-icon="fa-brands:symfony" data-inline="false"></span>
+    <div class="row">
+        <div class="col-8">
+            {{ include('turno/_filters_form.html.twig') }}
+        </div>
+        <div class="col-4">
+            <div class="card border-primary mb-3 align-bottom float-right shadow rounded-pill" style="max-width: 18rem; font-size: .8rem; background-color: rgb(245, 245, 245);">
+                <div class="card-body border-primary text-dark float-right shadow rounded-pill" style="max-width: 18rem; padding: 0rem; background-color: rgb(245, 245, 245);">
+                    <div class="card-body text-dark" style="font-size: 1rem;">
+                        Cantidad de Turnos:
+                        <strong id="cantidadTurnos"></strong>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="row">
+		<div class="col-12">
+			<div id="turnoList">
+				<div class="d-flex justify-content-center">
+					<div class="spinner-border m-5" role="status">
+						<span class="sr-only">Cargando...</span>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+    {% endblock %}
+
+    {% block javascripts %}
+    {{ parent() }}
+    <script>
+        var permitirImpresion = false;
+        //TODO: Ajustar para Sistema de Laboratorio Forense 
+        var isSistemaOralidad = '{{ SistemaOralidadCivil }}';
+        
+        function imprimirLista() {   
+            if(permitirImpresion) {
+                if(dt.page.info().pages == 1)                
+                    window.print();
+                else {
+                    if(confirm('Usted no está visualizando la totalidad de los turnos. ¿Desea imprimir el listado de igual manera?')) {
+                        window.print();
+                    }
+                }                
+            } else {
+                alert('No hay turnos para imprimir');
+            }
+        } 
+
+        $(function() {
+            var grillaTurnos = $('#turnoList').initDataTables( {{ datatable_settings(datatable) }}, {
+				dom: "B<'row' <'#busqueda.col-sm-4'f><'col-sm-8 text-right'p><'col-sm-12' tr>><'row' <'col-sm-6'l><'col-sm-6'p>>",
+				buttons: [],
+				searching: true,
+				language: {
+					"url": "{{ asset('build/static/traslation_dt_es.json') }}"
+				}
+			}).then(function (dt) {
+				dt.on('init', function(settings, json) {     
+                                 
+                    if(isSistemaOralidad == 1)
+					    $('#dt_filter input').attr("placeholder", "Funcionarios, Datos Adicionales");
+                    else
+					    $('#dt_filter input').attr("placeholder", "Persona, DNI, Motivo");
+					$('#dt_filter input').width(300);  
+
+                    if(dt.page.info().pages > 0) {
+                        permitirImpresion = true;
+                    }
+
+                    $('#cantidadTurnos').html(dt.page.info().recordsTotal);
+				});             
+			}); 
+
+            $(document).ready(function () {                 
+                
+                // ¿Tiene rol de Admin?
+                var roleAdmin = document.querySelector('.js-role-admin');
+                var isRoleAdmin = roleAdmin.dataset.isAuthenticated;
+
+                // ¿Tiene rol de Auditoría de Gestión?
+                var roleAuditoriaGestion = document.querySelector('.js-role-auditoria_gestion');
+                var isRoleAuditoriaGestion = roleAuditoriaGestion.dataset.isAuthenticated;
+                
+                var oficinaID = '{{ filtroOficina }}';
+
+                getNivelOcupacionAgenda(oficinaID);
+
+                if (isRoleAdmin || isRoleAuditoriaGestion) {
+                    // Armo lista de Oficinas para su selección por filtro
+                    $.ajax({
+                        url:"/TurnosWeb/oficinas",
+                        method: "POST",
+                        dataType: "json",
+                        success: function(data) {
+                            $('#cboOficina').html('');
+                            $('#cboOficina').append('<option value="">Todas</option>');
+                            $.each(data,function(key, registro) {
+                                if (oficinaID != '' && registro.id == oficinaID ) {
+                                    $("#cboOficina").append('<option value=' + registro.id +  ' selected>' + registro.oficina+'</option>');
+                                } else {
+                                    $("#cboOficina").append('<option value=' + registro.id +  '>' + registro.oficina+'</option>');
+                                }
+                            });   
+                        }
+                    })
+                }                
+            });
+
+            function getNivelOcupacionAgenda(idOficina)
+            {
+                // Obtiene nivel de ocupación de la Agenda
+                $.ajax({
+                    url:"/TurnosWeb/ocupacionAgenda",
+                    method: "POST",
+                    data: {'oficina_id' : idOficina},
+                    dataType: "json",
+                    success: function(data) {
+                        // Establece umbral de alerta (evaluar más adelante si no parametrizarlo)
+                        if (data > 50) { 
+                            $('#porcentajeAgendaAsignada').addClass('text-danger');
+                        }
+                        $('#porcentajeAgendaAsignada').html('Agenda Asignada: ' + data + '%');                                    
+                    }
+                })
+            }
+        }); 
+    </script>  
+
+{% endblock %}     

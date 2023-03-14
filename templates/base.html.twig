@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="es">
+    <head>
+        <meta charset="UTF-8">
+        {% if app.environment == 'prod' %}
+            <!-- Matomo -->
+            <script>
+              var _paq = window._paq = window._paq || [];
+              /* tracker methods like "setCustomDimension" should be called before "trackPageView" */
+              _paq.push(['trackPageView']);
+              _paq.push(['enableLinkTracking']);
+              (function() {
+                var u="https://matomosfe.justiciasantafe.gov.ar/";
+                _paq.push(['setTrackerUrl', u+'matomo.php']);
+                _paq.push(['setSiteId', '{{MatomoID}}']);
+                var d=document, g=d.createElement('script'), s=d.getElementsByTagName('script')[0];
+                g.async=true; g.src=u+'matomo.js'; s.parentNode.insertBefore(g,s);
+              })();
+            </script>
+            <!-- End Matomo Code -->
+        {% endif %}
+
+        <title>{% block title %}Turnos Web{% endblock %}</title>
+        {% block stylesheets %}
+            {{ encore_entry_link_tags('css/app') }}
+        {% endblock %}
+    </head>
+    <body>
+        {# Cambia el tipo de contenedor (ancho completo o no) en función a si está autenticado y a la URL #}
+        {% if  is_granted('IS_AUTHENTICATED_FULLY') and not ('TURNOSWEB' in app.request.pathInfo | upper) %}
+        <div class="container-fluid">
+        {% else %}
+        <div class="container">
+        {% endif %}
+
+            {%  set url = app.request.pathInfo|split('/') %}
+            {%  set lastStringUrl = url|last %}
+            
+            {# Muestra la barra de menu siempre que: Esté logueado. Que no esté viendo, editando o borrando. Que no esté generando un alta} #}
+            {% if is_granted('IS_AUTHENTICATED_FULLY') and not app.request.get('id') %}
+
+                {# Se eliminar estar condiciones adicionales and not lastStringUrl == 'new' and not lastStringUrl == 'open'#}
+                <nav class="navbar fixed-top navbar-expand-lg navbar-dark bg-primary border border-light text-white shadow" >
+                    {% set current_path = app.request.get('_route') %}
+                    {% if app.request.get('_route') != 'main' %}
+                            <a class="navbar-brand" href="{{ path('main') }}"><img src="{{asset('images/escudo.gif')}}" class="rounded float-left" alt="Poder Judicial" height="35" width="38"></a>
+                    {% endif %}
+                    <button class="navbar-toggler d-lg-none float-left" type="button" data-toggle="collapse" data-target="#collapsibleNavId" aria-controls="collapsibleNavId" aria-expanded="false" aria-label="Toggle navigation">
+                        <span class="navbar-toggler-icon"></span>
+                    </button>                    
+                    <div class="collapse navbar-collapse" id="collapsibleNavId">
+                        <ul class="navbar-nav mr-auto mt-2 mt-lg-0">
+                            <li class="nav-item dropdown">
+                                <a class="nav-link dropdown-toggle text-light" href="#" id="dropdownTurnosId" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">Turnos</a>
+                                <div class="dropdown-menu" aria-labelledby="dropdownTurnosId">
+                                    <a class="dropdown-item" href="{{ path('turno_index') }}">Gestionar</a>
+                                    <a class="dropdown-item" href="{{ path('turno_rechazado_index') }}">Rechazados</a>
+                                </div>
+                            </li>
+
+                            <li class="nav-item dropdown">
+                                <a class="nav-link dropdown-toggle text-light" href="#" id="dropdownInformesId" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">Informes</a>
+                                <div class="dropdown-menu" aria-labelledby="dropdownInformesId">
+                                    <a class="dropdown-item" href="{{ path('estadistica_index') }}">Estadísticas</a>
+                                    <a class="dropdown-item" href="{{ path('estadistica_evolucion_diaria') }}">Evolución Diaria de Ocupación</a>
+                                    {% if is_granted('ROLE_ADMIN') or is_granted('ROLE_AUDITORIA_GESTION') %}
+                                        <a class="dropdown-item" href="{{ path('informe_ocupacion_agenda') }}">Ocupación de las Agendas</a>
+                                        <a class="dropdown-item" href="{{ path('informe_ocupacion_plena') }}">Fecha Máxima de Ocupación Plena por Oficina</a>
+                                        <a class="dropdown-item" href="{{ path('informe_persona_duplicada') }}">Turnos por Personas</a>
+                                        <a class="dropdown-item" href="{{ path('informe_oficinas_estado_habilitacion') }}">Oficinas Habilitadas / Deshabilitadas</a>
+                                        {% if SistemaTurnosWeb %}
+                                            <a class="dropdown-item" href="{{ path('informe_fd_mensual') }}">Firma Digital</a>
+                                        {% endif %}
+                                    {% endif %}
+                                </div>
+                            </li>
+                            <li class="nav-item dropdown">
+                                <a class="nav-link dropdown-toggle text-light" href="#" id="dropdownAyudaId" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">Ayuda</a>
+                                <div class="dropdown-menu" aria-labelledby="dropdownAyudaId">
+                                    {% if SistemaTurnosWeb %}
+                                        <a class="dropdown-item" href="{{ asset('docs/Manual_de_Usuario.pdf') }}" target="_blank">Manual de Usuario</a>
+                                    {% endif %}
+                                    {% if SistemaOralidadCivil %}
+                                        <a class="dropdown-item" href="{{ asset('docs/Manual_de_Usuario_Agenda.pdf') }}" target="_blank">Manual de Usuario</a>
+                                    {% endif %}
+                                    {% if SistemaTurnosMPE %}
+                                        <a class="dropdown-item" href="{{ asset('docs/Manual_de_Usuario_MPE.pdf') }}" target="_blank">Manual de Usuario</a>
+                                    {% endif %}
+                                    {% if SistemaLaboratorioForense %}
+                                    <a class="dropdown-item" href="{{ asset('docs/Manual_de_Usuario_LF.pdf') }}" target="_blank">Manual de Usuario</a>
+                                    {% endif %}
+                                    
+                                </div>
+                            </li>
+                            {% if is_granted('ROLE_ADMIN') or is_granted('ROLE_AUDITORIA_GESTION') or (app.user.getOficina().getAutoGestion()) %}
+                                <li class="nav-item dropdown">
+                                    <a class="nav-link dropdown-toggle text-light" href="#" id="dropdownAdministrarId" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">Administrar</a>
+                                    <div class="dropdown-menu" aria-labelledby="dropdownAdministrarId">
+                                        {% if is_granted('ROLE_ADMIN') %}
+                                            <a class="dropdown-item" target="_blank" href="{{ app.request.getSchemeAndHttpHost() ~ "/oficina/cronAutoExtend/1/800/1" }}">Auto Extender Turneros 1 Día</a>
+                                        {% endif %}
+                                        {% if is_granted('ROLE_ADMIN') or is_granted('ROLE_AUDITORIA_GESTION') %}
+                                            <a class="dropdown-item" href="{{ path('config_index') }}">Configuración</a>
+                                            <a class="dropdown-item" href="{{ path('localidad_index') }}">Localidades</a>
+                                            {% if SistemaOralidadCivil or SistemaLaboratorioForense %}
+                                                <a class="dropdown-item" href="{{ path('organismo_index') }}">Organismos</a>
+                                            {% endif %} 
+                                        {% endif %}                                   
+                                        {% if is_granted('ROLE_ADMIN') or is_granted('ROLE_AUDITORIA_GESTION') or (app.user.getOficina().getAutoGestion()) %}
+                                            <a class="dropdown-item" href="{{ path('oficina_index') }}">Oficinas</a>
+                                        {% endif %}  
+                                        {% if is_granted('ROLE_ADMIN') or is_granted('ROLE_AUDITORIA_GESTION') %}                                 
+                                            <a class="dropdown-item" href="{{ path('usuario_index') }}">Usuarios</a>                                        
+                                        {% endif %}
+                                    </div>
+                                </li>
+                            {% endif %}
+
+                            <li class="nav-item float-right">
+                                <a class="nav-link text-light" href="{{ path('app_logout') }}">Salir</a>
+                            </li>
+                        </ul>
+                    </div>
+                    {% if is_granted('IS_AUTHENTICATED_FULLY') %}
+                        {% if app.environment == 'dev' %}
+                            <div class="text-danger mr-5"><strong>Testing</strong></div>
+                        {% endif %}
+                        {% if SistemaTurnosWeb %}
+                            <div class="lead text-center mr-5" style="font-size: .8rem; color: #EEE"><strong>Sistema de<br>Turnos Web</strong></div>
+                        {% endif %}
+                        {% if SistemaOralidadCivil %}
+                            <div class="lead text-center mr-5" style="font-size: .8rem; color: #EEE"><strong>Sistema de<br>Turnos de Agenda</strong></div>
+                        {% endif %}
+                        {% if SistemaTurnosMPE %}
+                            <div class="lead text-center mr-5" style="font-size: .8rem; color: #EEE"><strong>Sistema de<br>Turnos MPE</strong></div>
+                        {% endif %} 
+                        {% if SistemaLaboratorioForense %}
+                            <div class="lead text-center mr-5" style="font-size: .8rem; color: #EEE"><strong>Sistema de Turnos<br>Laboratorio Forense</strong></div>
+                        {% endif %}
+                                           
+                        {% if is_granted('IS_IMPERSONATOR') %}
+                            <a class="nav-link" href="/usuario?_switch_user=_exit" title="Dejar de Suplantar" style="padding: 0px; color:#DD7;"><i class="fas fa-lg fa-user-secret"></i></a>
+                            &nbsp;&nbsp;
+                            <div class="float-lg-right">
+                                <a class="nav-link" href="/usuario?_switch_user=_exit" title="Dejar de Suplantar" style="font-size: .8rem; padding: 0px; color:#DD7;">
+                                {{ app.user.getApellido()}}
+                                {% if app.user.getNombre() %}
+                                    {{ app.user.getNombre() }}
+                                {% endif %}
+                                </a>
+                                <div class="text-right" style="font-size: .6rem; color: #CCC">v{{ app.session.get('realeaseGit') }}</div>
+                            </div> 
+                        {% else %}
+                            <div class="float-lg-right" style="font-size: .8rem; color: #EEE">
+                                {{ app.user.getApellido()}}
+                                {% if app.user.getNombre() %}
+                                    {{ app.user.getNombre() }}
+                                {% endif %}
+                                <div class="text-right" style="font-size: .6rem; color: #CCC">v{{ app.session.get('realeaseGit') }}</div>
+                            </div> 
+                        {% endif %}                  
+                    {% endif %}
+                </nav>                
+                <br><br><br>
+            {% endif %}
+
+            {# Si está creando, viendo, editando o borrando un registro armo otro header del navbar#}
+            {% if is_granted('IS_AUTHENTICATED_FULLY') and (app.request.get('id') or lastStringUrl == 'new' or lastStringUrl == 'open') %}
+                <nav class="navbar fixed-top navbar-expand-lg navbar-dark bg-primary border border-light text-white" >
+                    {% set current_path = app.request.get('_route') %}
+                    {% if app.request.get('_route') != 'main' %}
+                            <a class="navbar-brand" href="{{ path('main') }}"><img src="{{asset('images/escudo.gif')}}" class="rounded float-left" alt="Poder Judicial" height="35" width="38"></a>
+                    {% endif %}
+                    <button class="navbar-toggler d-lg-none" type="button" data-toggle="collapse" data-target="#collapsibleNavId" aria-controls="collapsibleNavId"
+                        aria-expanded="false" aria-label="Toggle navigation"></button>
+                    <div class="collapse navbar-collapse" id="collapsibleNavId">
+                        <ul class="navbar-nav mr-auto mt-2 mt-lg-0">
+                            <li class="nav-item">
+                                <a class="nav-link text-light" href="#" onclick="history.back(); return false;">Volver</a>
+                            </li>
+                        </ul>
+                    </div>
+                    {% if is_granted('IS_AUTHENTICATED_FULLY') %}
+                        <div class="float-lg-right" style="font-size: .8rem; color: #EEE">
+                            {{ app.user.getApellido()}}
+                            {% if app.user.getNombre() %}
+                                {{ app.user.getNombre() }}
+                            {% endif %}
+                        </div>                   
+                    {% endif %}
+                </nav>
+                </br></br></br>
+            {% endif %}
+            {# Incluyo aca el template de flash messages de la aplicación #}
+            {{ include('components/_flashesMessages.html.twig') }}
+            {# Incluyo Back to top button #}
+            <a id="buttonTop" title="Volver arriba"><i class="fas fa-chevron-up"></i></a>
+            {% block body %}{% endblock %}            
+        </div>
+        {% block javascripts %}
+            {{ encore_entry_script_tags('js/app') }}
+            <script src="{{ asset('js/locales/bootstrap-datepicker.es.min.js') }}"></script>
+            <script src="{{ asset('bundles/datatables/js/datatables.js') }}"></script>
+            <script src="{{ asset('bundles/fosjsrouting/js/router.min.js') }}"></script>
+            <script src="{{ path('fos_js_routing_js', { callback: 'fos.Router.setData' }) }}"></script>
+            <script>
+                $(function () {
+                    // Agrega un * a todos los campos que son requeridos
+                    $('label.required').append('<sup><strong>&nbsp;*</strong></sup>');
+
+                    // Procesa aparición y ocultamiento mensajes tipo flash
+					$(".flashes-messages").hide().delay(1000).fadeIn(150).delay(2000).slideUp(500);
+					$(".flashes-messages-slow").hide().delay(1000).fadeIn(150).delay(10000).slideUp(1000);
+					$(".flashes-messages-closable").hide().delay(1000).fadeIn(150);
+
+                    // Button Top
+                    var btn = $('#buttonTop');
+
+                    $(window).scroll(function() {
+                        if ($(window).scrollTop() > 300) {
+                            btn.addClass('show');
+                        } else {
+                            btn.removeClass('show');
+                        }
+                    });
+
+                    btn.on('click', function(e) {
+                        e.preventDefault();
+                        $('html, body').animate({scrollTop:0}, '300');
+                    });
+                });
+            </script>
+        
+        {% endblock %}
+        <footer class="footer text-center">
+            <br><br>
+            <p>&copy; 2020 <a target="_blank" href="http://www.justiciasantafe.gov.ar/js/index.php"> Poder Judicial de la Provincia de Santa Fe</a> - República Argentina. Todos los derechos reservados.                
+                {% if app.environment == 'dev' %}
+                    <strong class="text-danger ml-3">TESTING</strong>
+                {% endif %}               
+            </p>
+        </footer>
+    </body>
+</html>

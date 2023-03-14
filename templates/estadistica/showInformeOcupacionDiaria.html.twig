@@ -1,0 +1,154 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Estadística de Turnos{% endblock %}
+
+{% block body %}
+    <h1>Informe de Ocupación de Agendas </h1>
+    <h2>{{subtitulo}}</h2>
+    <h6 class="text-center">{{ subTituloOrden }}</h6>
+    {% if subTituloExclusion %}
+        <h6 class="text-center">{{ subTituloExclusion }}</h6>
+    {% endif %}
+    <br>
+    {# Resumen Diario #}   
+    {% if ocupacion | length > 0 %}
+        <div class="container-fluid">
+           {% if tipoInforme != 1 or orden != 2 %}
+                <div class="row">
+                    <div class="col-12 float-right jsChart" data-is-authenticated="{{ grafico | length > 0 ? 'true' : 'false' }}">
+                        <div class="mb-3 shadow">
+                                <center><div id="div_chart"></div></center>
+                        <div class="card-footer text-muted text-center">La vista representa los turnos ocupados con relación a la cantidad total de turnos disponibles.</div>                                  
+                    </div>
+                </div>
+            {% endif %}
+        </div>
+        <div class="row">
+            <div class="col-12">
+                <div class="card border-primary mb-3 shadow">
+                    <div class="card-header"><strong>Nivel de Ocupación de la Agenda para cada Oficina</strong></div>
+                    <div class="card-body text-primary">
+                        <table class="table table-hover table-bordered">
+                            <thead>
+                                <tr>
+                                    <th class="text-center">Oficina</th>
+                                    <th class="text-center">Ocupación</th>
+                                    {% if tipoInforme == 1%}
+                                        <th class="text-center">Ultimo Turno Disponible</th>
+                                    {% endif %}
+                                    {% if tipoInforme == 2%}
+                                        <th class="text-right">Disponibles</th>
+                                        <th class="text-right" colspan="2">Otorgados</th>
+                                        <th class="text-right" colspan="2">No Atendidos</th>
+                                        <th class="text-right" colspan="2">Atendidos</th>
+                                        <th class="text-right" colspan="2">Ausentes</th>
+                                        <th class="text-right" colspan="2">Rechazados</th>
+                                    {% endif %}
+                                </tr>
+                            </thead>
+                            <tbody>
+                            {% set cantidad = 0 %}
+                            {% set oficinas, turnos, otorgados, noatendidos, atendidos, noasistidos, rechazados = 0, 0, 0, 0, 0, 0, 0 %}
+
+                            {% for oficina in ocupacion %}
+                                {% if tipoInforme == 2%}
+                                    {% set cantidad = cantidad + oficina['otorgados'] %}
+                                    {% set oficinas, turnos, otorgados, noatendidos, atendidos, noasistidos, rechazados = oficinas + 1, turnos + oficina['otorgados']
+                                    , otorgados + oficina['otorgados'] + oficina['rechazados_libres'], noatendidos + oficina['noatendidos'], atendidos + oficina['atendidos'], noasistidos + oficina['noasistidos'], rechazados + oficina['rechazados_libres']
+                                    %}    
+                                {% endif %}
+                                <tr>
+                                    <td class="">
+                                        <a href="{{ path('turno_index', {'cboOficina': oficina['id']}) }}" target="_blank" title="Abrir Agenda de la Oficina">{{ oficina['oficina'] }} ({{oficina['localidad']}})</a>
+                                        {% if tipoInforme == 1%}                                       
+                                            <a href="{{ path('estadistica_show', {'start': desde, 'end':oficina['ultimoTurno']  | slice(8, 2) ~ '/' ~ oficina['ultimoTurno'] | slice(5, 2) ~ '/' ~ oficina['ultimoTurno'] | slice(0, 4), 'oficinas':oficina['id'], 'general':'general', 'semanal': '', 'detallado':'detallado', 'diasSinTurnos':'', 'soloDiasSinTurnos': ''}) }}" target="_blank" title="Estadística de la Oficina"><i class="float-right fas fa-chart-pie"></i></a>
+                                        {% endif %}
+                                        {% if tipoInforme == 2%}                                       
+                                            <a href="{{ path('estadistica_show', {'start': desde, 'end':oficina['ultimoTurno']  | slice(8, 2) ~ '/' ~ oficina['ultimoTurno'] | slice(5, 2) ~ '/' ~ oficina['ultimoTurno'] | slice(0, 4), 'oficinas':oficina['id'], 'general':'general', 'semanal': '', 'detallado':'detallado', 'diasSinTurnos':'', 'soloDiasSinTurnos': ''}) }}" target="_blank" title="Estadística de la Oficina"><i class="float-right fas fa-chart-pie"></i></a>
+                                        {% endif %}
+                                    </td>
+                                    <td class="text-right">{{ oficina['ocupacion'] | round(2) }}%</td>
+                                    {% if tipoInforme == 1%}
+                                        <td class="text-center">{{ oficina['ultimoTurno'] }}</td>
+                                    {% endif %}
+                                    {% if tipoInforme == 2%}
+                                        <td class="text-right">{{ oficina['total']}}</td>
+                                        <td class="text-right">{{ oficina['otorgados'] + oficina['rechazados_libres']}}</td>
+                                        <td class="text-right text-secondary">{{ oficina['otorgados'] > 0 ? '(' ~ (((oficina['otorgados'] + oficina['rechazados_libres']) / oficina['total'] * 100) | round(2)) ~ '%)'}}</td>
+                                        <td class="text-right">{{ oficina['noatendidos'] }}</td>
+                                        <td class="text-right text-secondary">{{ oficina['otorgados'] > 0 ? '(' ~ ((oficina['noatendidos'] / (oficina['otorgados'] + oficina['rechazados_libres']) * 100) | round(2)) ~ '%)'}}</td>
+                                        <td class="text-right">{{ oficina['atendidos'] }}</td>
+                                        <td class="text-right text-secondary">{{ oficina['otorgados'] > 0 ? '(' ~ ((oficina['atendidos'] / (oficina['otorgados'] + oficina['rechazados_libres']) * 100) | round(2)) ~ '%)'}}</td>
+                                        <td class="text-right">{{ oficina['noasistidos'] }}</td>
+                                        <td class="text-right text-secondary">{{ oficina['otorgados'] > 0 ? '(' ~ ((oficina['noasistidos'] / (oficina['otorgados'] + oficina['rechazados_libres']) * 100) | round(2)) ~ '%)'}}</td>
+                                        <td class="text-right">{{ oficina['rechazados_libres'] }}</td>
+                                        <td class="text-right text-secondary">{{ oficina['otorgados'] > 0 ? '(' ~ ((oficina['rechazados_libres'] / (oficina['otorgados'] + oficina['rechazados_libres']) * 100) | round(2)) ~ '%)'}}</td>
+                                    {% endif %}
+                                </tr>
+                            {% endfor %}
+                                <tr>
+                                    <td class="text-center"><b>Cant. de Oficinas: {{ocupacion | length}}</b></td>
+                                    {% if tipoInforme == 1%}
+                                        <td class="text-right"><b>{{(ocupacionGlobal * 100) | round(2) }}%</b></td>
+                                    {% endif %}
+                                    {% if tipoInforme == 2%}
+                                        <td class="text-right"></td>
+                                    {% endif %}
+                                    {% if tipoInforme == 1%}
+                                        <td></td>
+                                    {% endif %}
+                                    {% if tipoInforme == 2%}
+                                        <td class="text-right" colspan="2"><b>{{otorgados}}</td>
+                                        <td class="text-right" colspan="2"><b>{{noatendidos}}</td>
+                                        <td class="text-right" colspan="2"><b>{{atendidos}}</td>
+                                        <td class="text-right" colspan="2"><b>{{noasistidos}}</td>
+                                        <td class="text-right" colspan="2"><b>{{rechazados}}</td>
+                                    {% endif %}
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    {% if tipoInforme == 1%}
+                        <div class="card-footer text-muted text-center">{{ (ocupacionGlobal * 100) | round(2) }}% representa el nivel de ocupación global considerando todas las agendas existentes.</div>
+                    {% endif %}
+                </div> 
+            </div>
+        </div>
+
+    {% endif %}
+
+    <br>
+    <div class="container-fluid"> 
+        <div class="row">
+            <div class="col-12">
+                <a class="btn btn-secondary float-left shadow volver" href="{{ path('informe_ocupacion_agenda') }}">Volver</a>
+            </div>
+        </div>
+    </div>
+
+{% endblock %}
+
+
+{% block javascripts %}
+    {{ parent() }}
+    <script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>
+    <script type="text/javascript">{{ gc_draw(grafico, 'div_chart') }}</script>
+{#
+
+        document.addEventListener('DOMContentLoaded', function() {
+            var jsChart = document.querySelector('.jsChart');
+            var muestro = jsChart.dataset.isAuthenticated;
+
+            if (muestro == true) {
+                var head = document.getElementsByTagName('head')[0];
+                var script = document.createElement('script');
+
+                script.src = "https://www.gstatic.com/charts/loader.js"
+                {{ gc_draw(piechart, 'div_chart') }}
+            
+            }
+
+        });    
+#}
+
+{% endblock %}     

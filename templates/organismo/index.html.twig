@@ -1,0 +1,52 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Gestión de Organismos{% endblock %}
+
+{% block body %}
+    <h1>Gestión de Organismos</h1>
+    <div class="top-listas">
+		{% if is_granted('ROLE_EDITOR') %}
+			<div id="botonera-organismo" class="row" style="display: none;">
+				<div class="col-12">
+					<div class="float-right boton">
+						<a class="btn btn-primary shadow" href="{{ path('organismo_new') }}">Crear Nuevo Organismo</a>
+					</div>
+				</div>
+			</div>
+		{% endif %}		
+	</div>
+	<div class="row">
+		<div class="col-12">
+			<div id="organismoList">
+				<div class="d-flex justify-content-center">
+					<div class="spinner-border m-5" role="status">
+						<span class="sr-only">Cargando...</span>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+{% endblock %}
+
+{% block javascripts %}
+	{{ parent() }}
+	<script>
+		$(function () {
+			var grillaOrganismos = $('#organismoList').initDataTables( {{ datatable_settings(datatable) }}, {
+				dom: "B<'row' <'#busqueda.col-sm-4 text-left'f><'col-sm-8 text-right'i><'col-sm-12' tr>><'row' <'col-sm-6'l><'col-sm-6'p>>",
+                buttons: [],
+                searching: true,
+				language: {
+					"url": "{{ asset('build/static/traslation_dt_es.json') }}"
+				}
+			}).then(function (dt) {
+				dt.on('init', function(settings, json) {
+					$('#botonera-organismo').show();
+					$('#dt_filter input').attr("placeholder", "Código, Organismo");
+					$('#dt_filter input').width(200); 
+				});
+			});
+		});
+	</script>
+
+{% endblock %}

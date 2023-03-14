@@ -1,0 +1,98 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Gestión de Oficina{% endblock %}
+
+{% block body %}
+    <h1>Gestión de Oficinas</h1>
+    <div class="top-listas">
+        {% if is_granted('ROLE_EDITOR') %} 
+            <div id="botonera-oficina" class="row" style="display: none;">
+                <div class="col-12">
+                    <div class="float-right boton">
+                        <a id="creacion-masiva" class="btn btn-primary shadow" href="#">Creación Masiva Turnos</a>
+                        &nbsp;&nbsp;
+                        <a class="btn btn-primary shadow" href="{{ path('oficina_deshacer') }}">Deshacer Última Creación de Turnos</a>
+                        &nbsp;&nbsp;
+                        <a class="btn btn-primary shadow" href="{{ path('oficina_new') }}">Crear Nueva Oficina</a>
+                    </div>
+
+                    <label for="lblFiltro">Ver:</label>
+                    <select name="lblFiltro" id="lblFiltro">
+                      <option value="" SELECTED>TODOS</option>
+                      <option value="1" >Oficinas Habilitadas</option>
+                      <option value="0">Oficinas Deshabilitadas</option>
+                    </select> 
+                </div>
+            </div>
+        {% endif %}
+    </div>
+    <div class="row">
+		<div class="col-12">
+			<div id="oficinaList">
+				<div class="d-flex justify-content-center">
+					<div class="spinner-border m-5" role="status">
+						<span class="sr-only">Cargando...</span>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+{% endblock %}
+
+{% block javascripts %}
+    {{ parent() }}
+    <script>
+        $(function() {   
+            var grillaOficinas = $('#oficinaList').initDataTables( {{ datatable_settings(datatable) }}, {
+                dom: "<'row' <'#busqueda.col-sm-2 text-left'f><'col-sm-2 text-left'B><'col-sm-8 text-right'i><'col-sm-12' tr>><'row' <'col-sm-6'l><'col-sm-6'p>>",                                        
+                searching: true,
+                columnDefs: [ {
+                    targets:   0,
+                    orderable: false,
+                    className: 'select-checkbox'
+                } ],
+                select: {
+                    style:    'multi',
+                    selector: 'td:first-child'
+                },
+                buttons: [
+                    'selectAll',
+                    'selectNone'
+                ],
+                language: {
+                    "url": "{{ asset('build/static/traslation_dt_es.json') }}"
+                }
+            }).then(function (dt) {
+                dt.on('init', function(settings, json) {
+                    // Filtro por defecto Oficinas Habilitadas
+                    dt.column(10).search($('#lblFiltro').val()).draw(); 
+
+                    $('#botonera-oficina').show();
+                    $('#creacion-masiva').click(function() {
+                        // Chequeo que haya dos oficinas seleccionadas como mínimo
+                        if(dt.rows({ selected: true}).count() > 1) {
+                            // Obtengo los ids seleccionados
+                            var idSeleccionados = dt.rows({ selected: true}).ids().toArray();
+                            // Invoco al controller
+                            location.href = Routing.generate('oficina_addTurnosOficinas', {'ids': JSON.stringify(idSeleccionados)});
+                        } else {
+                            alert('Debe seleccionar por lo menos 2 oficinas');
+                        }
+                    });
+                    $('#dt_filter input').attr("placeholder", "Oficinas, Localidad");
+					$('#dt_filter input').width(200); 
+
+                   
+
+                    // Vuelvo a recargar los datos conforme al filtro seleccionado
+                    $('#lblFiltro').change(function() {                      
+                        dt.column(10).search($('#lblFiltro').val()).draw(); 
+                    });  
+                });
+            }); 
+        });
+
+      
+    </script>  
+    
+{% endblock %}     

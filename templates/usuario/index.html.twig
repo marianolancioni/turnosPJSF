@@ -1,0 +1,53 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Gestión de Usuario{% endblock %}
+
+{% block body %}
+	<h1>Gestión de Usuarios</h1>
+	<div class="top-listas">		
+		{% if is_granted('ROLE_EDITOR') %}
+			<div id="botonera-usuario" class="row" style="display: none;">
+				<div class="col-12">
+					<div class="float-right boton">
+						<a class="btn btn-primary shadow" href="{{ path('usuario_new') }}">Crear Nuevo Usuario</a>
+					</div>
+				</div>
+			</div>
+		{% endif %}		
+	</div>
+	<div class="row">
+		<div class="col-12">
+			<div id="usuarioList">
+				<div class="d-flex justify-content-center">
+					<div class="spinner-border m-5" role="status">
+						<span class="sr-only">Cargando...</span>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+{% endblock %}
+
+{% block javascripts %}
+	{{ parent() }}
+	<script>
+		$(function () {
+			
+			var grillaUsuarios = $('#usuarioList').initDataTables( {{ datatable_settings(datatable) }}, {
+				dom: "B<'row' <'#busqueda.col-sm-4 text-left'f><'col-sm-8 text-right'i><'col-sm-12' tr>><'row' <'col-sm-6'l><'col-sm-6'p>>",
+				buttons: [],
+				searching: true,
+				language: {
+					"url": "{{ asset('build/static/traslation_dt_es.json') }}"
+				}
+			}).then(function (dt) {
+				dt.on('init', function(settings, json) {
+					$('#botonera-usuario').show();    
+					$('#dt_filter input').attr("placeholder", "Usuario, Apellido, Nombre, Oficina, Fechas");
+					$('#dt_filter input').width(300);                 
+				});
+			});            		
+        });
+	</script>
+
+{% endblock %}

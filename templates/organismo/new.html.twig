@@ -1,0 +1,10 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Nuevo Organismo{% endblock %}
+
+{% block body %}
+    <h1>Crear nuevo Organismo</h1>
+    {{ include('organismo/_form.html.twig') }}
+    <!-- Se agregan estilos a los botones para que queden alineados -->
+    <a class="btn btn-secondary float-left shadow volver" href="#" onclick="history.back(); return false;">Volver a la Lista</a>
+{% endblock %}

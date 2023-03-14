@@ -1,0 +1,78 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Informe Ocupación{% endblock %}
+
+{% block body %}
+    <h1>Informe de Ocupación de Agendas</h1>
+    <br>
+        <div class="row">
+            <div class="col-4"></div>
+            <div class="col-4 text-center form-group">
+                <form method="post" action="{{ path('informe_show_ocupacion_diaria') }}">
+                    <div class="form-check form-check-inline">
+                        <input class="form-check-input" type="radio" name="inlineRadioOptions" id="opt1" value="1" checked>
+                        <label class="form-check-label" for="opt1">Agenda Completa</label>
+                    </div>
+                    <div class="form-check form-check-inline mb-5">
+                        <input class="form-check-input" type="radio" name="inlineRadioOptions" id="opt2" value="2">
+                        <label class="form-check-label" for="opt2">Un día en particular</label>
+                    </div>
+                    <div id="fechaHora" class="selectorFechaHora text-center" name="selectorFechaHora">
+                        <label for="txtFechaDesde" id="lblDesde">Seleccione un día</label>
+                        <input type="text" id="txtFechaHora" name="start" required="required" class="js-datepicker form-control" value="{{desde}}" disabled/>
+                        <br>
+                        <label for="txtFechaDesde" id="lblDesde">Ordenar por</label>
+                        <div id="divOrden"><select class="form-control" id="cboOrden" name="orden"></select></div>
+                    </div>
+                    {% if SistemaTurnosWeb %}
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="chkOficinasFD" value="1" name="chkOficinasFD" checked>
+                            <label class="form-check-label" for="chkOficinasFD">Excluir Oficinas <i>"Firma Digital con Token - Obtención del Certificado"</i></label>
+                        </div>
+                    {% endif %}
+                    <br><br>
+                    <center><button class="btn btn-primary shadow">{{ button_label|default('Generar Informe') }}</button></center>
+                </form>
+            </div>
+        </div>
+
+{% endblock %}
+
+{% block javascripts %}
+    {{ parent() }}
+    <script>
+        $(function() {
+            $(document).ready(function(){            
+                $('#fechaHora input').datepicker({
+                    format: "dd/mm/yyyy",
+                    language: "es",
+                    todayBtn: true,
+                    orientation: "bottom right",
+                    daysOfWeekDisabled: "0,6",
+                    daysOfWeekHighlighted: "0",
+                    autoclose: true,
+                    multidate: false
+                });                  
+
+                // Deshabilita selección de fecha
+                $('#opt1').click(function() {
+                    $('#fechaHora input').attr("disabled", true);
+                    $('#cboOrden').html('<option value="1" selected>Nivel de Ocupación</option><option value="2">Ultimo Turno Disponible</option>')
+
+                });
+
+                // Habilita selección de fecha
+                $('#opt2').click(function() {
+                    $('#fechaHora input').removeAttr("disabled");
+                    $('#cboOrden').html('<option value="1" selected>Nivel de Ocupación</option><option value="2">Cantidad de Turnos Disponibles</option>')
+                });
+
+                // Fuerzo armado del combo de ordenamiento
+                $('#opt1').click();
+    
+            }); 
+
+        });
+    </script>  
+    
+{% endblock %}     

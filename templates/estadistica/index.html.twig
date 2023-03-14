@@ -1,0 +1,94 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Estadistícas de Turnos{% endblock %}
+
+{% block body %}
+    <h1>Estadística</h1>
+    <br>
+
+        <div class="row">
+            <div class="col"></div>
+            <center>
+                <div class="col-12 form-group input-daterange input-group">
+                    <form method="post" action="{{ path('estadistica_show') }}">
+                        <div id="fechaHora" class="selectorFechaHora" name="selectorFechaHora">
+                            <label for="txtFechaDesde" id="lblDesde" class="required">Desde</label>
+                            <input type="text" id="txtFechaHora" name="start" required="required" class="js-datepicker form-control" value="{{desde}}"/>
+                            <br>
+                            <label for="txtFechaHasta" id="lblHasta" class="required">Hasta</label>
+                            <input type="text" id="txtFechaHora" name="end" required="required" class="js-datepicker form-control" value="{{hasta}}"/>
+                        </div>
+                        <br> 
+                        {% if is_granted('ROLE_ADMIN') or is_granted('ROLE_AUDITORIA_GESTION') %}
+                            <label for="cboOficina" class="required">Oficina</label>
+                            <select class="form-control" id="oficinas" name="oficinas">
+                                <option value="0">TODAS LAS OFICINAS</option>
+                                <option disabled>────────────────────────────</option>
+                                {% for oficina in oficinas %}
+                                    <option value="{{oficina.id}}">{{oficina.oficina}}</option>
+                                {% endfor %}
+                            </select>
+                        {% endif %}
+                        <br>
+                        <div class="form-check form-check-inline">
+                            <input class="form-check-input" type="checkbox" id="inlineCheckbox1" value="general" name="general" checked>
+                            <label class="form-check-label" for="inlineCheckbox1">Resumen General</label>
+                        </div>
+                        <div class="form-check form-check-inline">
+                            <input class="form-check-input" type="checkbox" id="inlineCheckbox2" value="semanal" name="semanal">
+                            <label class="form-check-label" for="inlineCheckbox2">Vista Semanal</label>
+                            </div>
+                        <div class="form-check form-check-inline">
+                            <input class="form-check-input" type="checkbox" id="inlineCheckboxDetallado" value="detallado" name="detallado" checked>
+                            <label class="form-check-label" for="inlineCheckbox3">Vista Detallada</label>
+                        </div>
+                        <br>
+                        <br>
+                        <div class="form-check form-check-inline">
+                            <input class="form-check-input" type="checkbox" id="inlineCheckboxdiasSinTurnos" value="diasSinTurnos" name="diasSinTurnos" disabled>
+                            <label class="form-check-label" for="inlineCheckbox4">Incluir dias sin turnos</label>
+                        </div>
+                        <div class="form-check form-check-inline">
+                            <input class="form-check-input" type="checkbox" id="inlineCheckboxsolodDiasSinTurnos" value="solodDiasSinTurnos" name="soloDiasSinTurnos" disabled>
+                            <label class="form-check-label" for="inlineCheckbox5">Mostrar únicamente dias sin turnos</label>
+                        </div>
+
+                        <br><br>
+                        <center><button class="btn btn-primary shadow">{{ button_label|default('Generar Estadística') }}</button></center>
+                    </form>
+                </div>
+            </center>
+            <div class="col"></div>
+        </div>
+
+{% endblock %}
+
+{% block javascripts %}
+    {{ parent() }}
+    <script>
+            $(document).ready(function(){            
+                $('#fechaHora input').datepicker({
+                    format: "dd/mm/yyyy",
+                    language: "es",
+                    todayBtn: true,
+                    orientation: "bottom right",
+                    daysOfWeekDisabled: "0,6",
+                    daysOfWeekHighlighted: "0",
+                    autoclose: true,
+                    multidate: false
+                });   
+                
+                $('#inlineCheckboxDetallado').click(function() {
+                    if ($(this).prop("checked")) { 
+                        $('#inlineCheckboxdiasSinTurnos').removeAttr("disabled");
+                        $('#inlineCheckboxsolodDiasSinTurnos').removeAttr("disabled");
+                    } else {
+                        $('#inlineCheckboxdiasSinTurnos').attr("disabled", true);
+                        $('#inlineCheckboxsolodDiasSinTurnos').attr("disabled", true);
+                    }
+
+                })
+            });
+    </script>  
+    
+{% endblock %}     

@@ -1,0 +1,54 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Informe de Ocupación Plena{% endblock %}
+
+{% block body %}
+    <h1>Fecha Máxima de Ocupación Plena por Oficina</h1>
+    <br>
+        <div class="row">
+            <div class="col-5"></div>
+            <div class="col-2 text-center form-group">
+                <form method="post" action="{{ path('informe_show_ocupacion_plena') }}">
+                    <div id="fechaHora" class="selectorFechaHora text-center" name="selectorFechaHora">
+                        <label for="cboCircunscripcion" id="lblCircunscripcion">Seleccione una Circunscripción</label>
+                        <select class="form-control" id="cboCircunscripcion" name="circunscripcion">
+                            {# Dependiendo si el usuario loguado tiene seteada la circunscripción o no decido que mostrar en este combo #}
+                            {% if app.user.getCircunscripcion() %}
+                                {% if app.user.getCircunscripcion().getId() == 1 %}
+                                <option value="0" selected>TODAS</option>
+                                    <option value="1">1. Santa Fe</option>
+                                    <option value="4">4. Reconquista</option>
+                                    <option value="5">5. Rafaela</option>
+                                {% else %}
+                                    <option value="0" selected>TODAS</option>
+                                    <option value="2">2. Rosario</option>
+                                    <option value="3">3. Venado Tuerto</option>
+                                {% endif %}
+                            {% else %}
+                                <option value="0" selected>TODAS</option>
+                                <option value="1">1. Santa Fe</option>
+                                <option value="2">2. Rosario</option>
+                                <option value="3">3. Venado Tuerto</option>
+                                <option value="4">4. Reconquista</option>
+                                <option value="5">5. Rafaela</option>
+                            {% endif %}
+                            
+                        </select>
+                        <br>
+                        <label for="cboOrden" id="lblOrden">Ordenar por</label>
+                        <select class="form-control" id="cboOrden" name="orden">
+                            <option value="1" selected>Fecha</option>
+                            <option value="2">Localidad y Organismo</option>
+                        </select>
+                    </div>                    
+                    <div class="form-check form-check-inline">
+                        <input class="form-check-input" type="checkbox" id="soloHabilitadas" name="soloHabilitadas" checked>
+                        <label class="form-check-label" for="soloHabilitadas">Solo Oficinas Habilitadas</label>
+                    </div>
+                    <br><br>
+                    <center><button class="btn btn-primary shadow">{{ button_label|default('Generar Informe') }}</button></center>
+                </form>
+            </div>
+        </div>
+
+{% endblock %}
